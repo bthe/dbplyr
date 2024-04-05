@@ -11,6 +11,11 @@
 #' * Custom subquery generation (no `AS`)
 #' * `setdiff()` uses `MINUS` instead of `EXCEPT`
 #'
+#' Note that versions of Oracle prior to 23c have limited supported for
+#' `TRUE` and `FALSE` and you may need to use `1` and `0` instead.
+#' See <https://oracle-base.com/articles/23c/boolean-data-type-23c> for
+#' more details.
+#'
 #' Use `simulate_oracle()` with `lazy_frame()` to see simulated SQL without
 #' converting to live access database.
 #'
@@ -48,11 +53,6 @@ sql_query_select.Oracle <- function(con,
                                     subquery = FALSE,
                                     lvl = 0) {
 
-  if (!is.null(limit)) {
-    limit <- as.integer(limit)
-    where = c(paste0("ROWNUM <= ", limit), where)
-  }
-
   sql_select_clauses(con,
     select    = sql_clause_select(con, select, distinct),
     from      = sql_clause_from(from),
@@ -61,6 +61,11 @@ sql_query_select.Oracle <- function(con,
     having    = sql_clause_having(having),
     window    = sql_clause_window(window),
     order_by  = sql_clause_order_by(order_by, subquery, limit),
+    # Requires Oracle 12c, released in 2013
+    limit =   if (!is.null(limit)) {
+      limit <- format(as.integer(limit))
+      glue_sql2(con, "FETCH FIRST {limit} ROWS ONLY")
+    },
     lvl = lvl
   )
 }
@@ -272,4 +277,4 @@ db_explain.OraConnection <- db_explain.Oracle
 #' @export
 db_supports_table_alias_with_as.OraConnection <- db_supports_table_alias_with_as.Oracle
 
-utils::globalVariables(c("DATE", "CURRENT_TIMESTAMP", "TRUNC", "dbms_random.VALUE"))
+utils::globalVariables(c("DATE", "CURRENT_TIMESTAMP", "TRUNC", "dbms_random.VALUE", "DATEDIFF", "CEIL", "NUMTODSINTERVAL"))

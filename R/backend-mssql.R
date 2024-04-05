@@ -364,13 +364,13 @@ simulate_mssql <- function(version = "15.0") {
         sql_expr(DATEFROMPARTS(!!year, !!month, !!day))
       },
       get_year = function(x) {
-        sql_expr(DATEPART('year', !!x))
+        sql_expr(DATEPART(YEAR, !!x))
       },
       get_month = function(x) {
-        sql_expr(DATEPART('month', !!x))
+        sql_expr(DATEPART(MONTH, !!x))
       },
       get_day = function(x) {
-        sql_expr(DATEPART('day', !!x))
+        sql_expr(DATEPART(DAY, !!x))
       },
 
       difftime = function(time1, time2, tz, units = "days") {
@@ -383,7 +383,7 @@ simulate_mssql <- function(version = "15.0") {
           cli::cli_abort('The only supported value for {.arg units} on SQL backends is "days"')
         }
 
-        sql_expr(DATEDIFF(day, !!time1, !!time2))
+        sql_expr(DATEDIFF(DAY, !!time1, !!time2))
       }
     )
 
@@ -510,19 +510,12 @@ mssql_version <- function(con) {
 # <https://docs.microsoft.com/en-us/previous-versions/sql/sql-server-2008-r2/ms177399%28v%3dsql.105%29#temporary-tables>
 #' @export
 `db_table_temporary.Microsoft SQL Server` <- function(con, table, temporary, ...) {
-  table <- as_table_ident(table)
-  table_name <- vctrs::field(table, "table")
-
-  if (temporary && substr(table_name, 1, 1) != "#") {
-    table_name <- hash_temp(table_name)
-    vctrs::field(table, "table") <- table_name
-  }
-
   list(
-    table = table,
+    table = add_temporary_prefix(con, table, temporary = temporary),
     temporary = FALSE
   )
 }
+
 
 #' @export
 `sql_query_save.Microsoft SQL Server` <- function(con,
@@ -666,4 +659,4 @@ bit_to_boolean <- function(x_expr) {
   }
 }
 
-utils::globalVariables(c("BIT", "CAST", "%AS%", "%is%", "convert", "DATE", "DATENAME", "DATEPART", "IIF", "NOT", "SUBSTRING", "LTRIM", "RTRIM", "CHARINDEX", "SYSDATETIME", "SECOND", "MINUTE", "HOUR", "DAY", "DAYOFWEEK", "DAYOFYEAR", "MONTH", "QUARTER", "YEAR", "BIGINT", "INT", "%AND%", "%BETWEEN%"))
+utils::globalVariables(c("BIT", "CAST", "%AS%", "%is%", "convert", "DATE", "DATEADD", "DATEFROMPARTS", "DATEDIFF", "DATENAME", "DATEPART", "IIF", "NOT", "SUBSTRING", "LTRIM", "RTRIM", "CHARINDEX", "SYSDATETIME", "SECOND", "MINUTE", "HOUR", "DAY", "DAYOFWEEK", "DAYOFYEAR", "MONTH", "QUARTER", "YEAR", "BIGINT", "INT", "%AND%", "%BETWEEN%"))

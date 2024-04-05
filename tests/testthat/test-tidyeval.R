@@ -21,23 +21,6 @@ test_that("existing atomic non-variables get inlined", {
   expect_equal(capture_dot(lf, x + n), expr(x + 10))
 })
 
-test_that("other objects get informative error", {
-  lf <- lazy_frame(a = 1)
-
-  input <- structure(list(), class = "reactivevalues")
-  x <- structure(function() "y", class = "reactive")
-  l <- list()
-  df <- data.frame(x = 1)
-
-  expect_snapshot({
-    capture_dot(lf, input)
-    capture_dot(lf, x())
-    capture_dot(lf, df)
-    capture_dot(lf, l)
-    capture_dot(lf, mean)
-  }, error = TRUE)
-})
-
 test_that("names are stripped", {
   lf <- lazy_frame(x = "a")
   y <- c(x = "a", "b")
@@ -89,4 +72,11 @@ test_that("fails with multi-classes", {
   lf <- lazy_frame(x = 1, y = 2)
   x <- structure(list(), class = c('a', 'b'))
   expect_error(partial_eval(x, lf), "Unknown input type", fixed = TRUE)
+})
+
+test_that("old arguments are defunct", {
+  expect_snapshot(error = TRUE, {
+    partial_eval(quote(x), vars = c("x", "y"))
+    partial_eval(quote(x), data = c("x", "y"))
+  })
 })

@@ -56,7 +56,7 @@ db_connection_describe.MySQLConnection <- db_connection_describe.MariaDBConnecti
 
 #' @export
 db_col_types.MariaDBConnection <- function(con, table, call) {
-  table <- as_table_ident(table, error_call = call)
+  table <- as_table_path(table, con, error_call = call)
   col_info_df <- DBI::dbGetQuery(con, glue_sql2(con, "SHOW COLUMNS FROM {.tbl table};"))
   set_names(col_info_df[["Type"]], col_info_df[["Field"]])
 }
@@ -262,6 +262,20 @@ sql_escape_datetime.MariaDBConnection <- function(con, x) {
 sql_escape_datetime.MySQLConnection <- sql_escape_datetime.MariaDBConnection
 #' @export
 sql_escape_datetime.MySQL <- sql_escape_datetime.MariaDBConnection
+
+
+# dbQuoteIdentifier() for RMySQL lacks handling of SQL objects
+#' @export
+sql_escape_ident.MySQLConnection <- function(con, x) {
+  if (!isS4(con)) { # for simulate_mysql()
+    NextMethod()
+  } else if (methods::is(x, "SQL")) {
+    x
+  } else {
+    DBI::dbQuoteIdentifier(con, x)
+  }
+}
+
 
 #' @export
 supports_window_clause.MariaDBConnection <- function(con) {

@@ -1,31 +1,13 @@
-# other objects get informative error
+# old arguments are defunct
 
     Code
-      capture_dot(lf, input)
+      partial_eval(quote(x), vars = c("x", "y"))
     Condition
       Error:
-      ! Cannot translate shiny inputs to SQL.
-      i Do you want to force evaluation in R with (e.g.) `!!input$x` or `local(input$x)`?
+      ! The `vars` argument of `partial_eval()` was deprecated in dbplyr 2.1.2 and is now defunct.
     Code
-      capture_dot(lf, x())
-    Output
-      x()
-    Code
-      capture_dot(lf, df)
+      partial_eval(quote(x), data = c("x", "y"))
     Condition
       Error:
-      ! Cannot translate a data.frame to SQL.
-      i Do you want to force evaluation in R with (e.g.) `!!df$x` or `local(df$x)`?
-    Code
-      capture_dot(lf, l)
-    Condition
-      Error:
-      ! Cannot translate an empty list to SQL.
-      i Do you want to force evaluation in R with (e.g.) `!!l` or `local(l)`?
-    Code
-      capture_dot(lf, mean)
-    Condition
-      Error:
-      ! Cannot translate a function to SQL.
-      i Do you want to force evaluation in R with (e.g.) `!!mean` or `local(mean)`?
+      ! The `data` argument of `partial_eval()` must be a lazy frame as of dbplyr 2.1.2.
 

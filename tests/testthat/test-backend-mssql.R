@@ -136,15 +136,15 @@ test_that("custom clock functions translated correctly", {
   expect_error(test_translate_sql(add_days(x, 1, "dots", "must", "be empty")))
   expect_equal(test_translate_sql(date_build(2020, 1, 1)), sql("DATEFROMPARTS(2020.0, 1.0, 1.0)"))
   expect_equal(test_translate_sql(date_build(year_column, 1L, 1L)), sql("DATEFROMPARTS(`year_column`, 1, 1)"))
-  expect_equal(test_translate_sql(get_year(date_column)), sql("DATEPART('year', `date_column`)"))
-  expect_equal(test_translate_sql(get_month(date_column)), sql("DATEPART('month', `date_column`)"))
-  expect_equal(test_translate_sql(get_day(date_column)), sql("DATEPART('day', `date_column`)"))
+  expect_equal(test_translate_sql(get_year(date_column)), sql("DATEPART(YEAR, `date_column`)"))
+  expect_equal(test_translate_sql(get_month(date_column)), sql("DATEPART(MONTH, `date_column`)"))
+  expect_equal(test_translate_sql(get_day(date_column)), sql("DATEPART(DAY, `date_column`)"))
 })
 
 test_that("difftime is translated correctly", {
   local_con(simulate_mssql())
-  expect_equal(test_translate_sql(difftime(start_date, end_date, units = "days")), sql("DATEDIFF(day, `start_date`, `end_date`)"))
-  expect_equal(test_translate_sql(difftime(start_date, end_date)), sql("DATEDIFF(day, `start_date`, `end_date`)"))
+  expect_equal(test_translate_sql(difftime(start_date, end_date, units = "days")), sql("DATEDIFF(DAY, `start_date`, `end_date`)"))
+  expect_equal(test_translate_sql(difftime(start_date, end_date)), sql("DATEDIFF(DAY, `start_date`, `end_date`)"))
 
   expect_error(test_translate_sql(difftime(start_date, end_date, units = "auto")))
   expect_error(test_translate_sql(difftime(start_date, end_date, tz = "UTC", units = "days")))
@@ -387,6 +387,19 @@ test_that("can copy_to() and compute() with temporary tables (#438)", {
     transform = snap_transform_dbi
   )
   expect_equal(db2 %>% pull(), 2:4)
+})
+
+test_that("add prefix to temporary table", {
+  con <- simulate_mssql()
+  expect_snapshot(
+    out <- db_table_temporary(con, table_path("foo.bar"), temporary = TRUE)
+  )
+  expect_equal(out, list(table = table_path("`foo`.`#bar`"), temporary = FALSE))
+
+  expect_silent(
+    out <- db_table_temporary(con, table_path("foo.#bar"), temporary = TRUE)
+  )
+  expect_equal(out, list(table = table_path("foo.#bar"), temporary = FALSE))
 })
 
 test_that("bit conversion works for important cases", {

@@ -51,19 +51,16 @@
 #' f <- function(x) x + 1
 #' partial_eval(quote(year > f(1980)), lf)
 #' partial_eval(quote(year > local(f(1980))), lf)
-partial_eval <- function(call, data, env = caller_env(), vars = NULL, error_call) {
-  if (!is_null(vars)) {
-    lifecycle::deprecate_warn("2.1.2", "partial_eval(vars)", always = TRUE)
-    data <- lazy_frame(!!!rep_named(vars, list(logical())))
+partial_eval <- function(call,
+                         data,
+                         env = caller_env(),
+                         vars = deprecated(),
+                         error_call) {
+  if (lifecycle::is_present(vars)) {
+    lifecycle::deprecate_stop("2.1.2", "partial_eval(vars)")
   }
-
   if (is.character(data)) {
-    lifecycle::deprecate_warn(
-      "2.1.2",
-      "partial_eval(data = 'must be a lazy frame')",
-      always = TRUE
-    )
-    data <- lazy_frame(!!!rep_named(data, list(logical())))
+    lifecycle::deprecate_stop("2.1.2", "partial_eval(data = 'must be a lazy frame')", )
   }
 
   if (is_sql_literal(call)) {
@@ -157,20 +154,13 @@ partial_eval_sym <- function(sym, data, env) {
   if (name %in% vars) {
     sym
   } else if (env_has(env, name, inherit = TRUE)) {
+    # Inline the value so that the translation function can choose what to do
+
     val <- eval_bare(sym, env)
-
-    # Handle common failure modes
-    if (inherits(val, "data.frame")) {
-      error_embed("a data.frame", paste0(name, "$x"))
-    } else if (inherits(val, "reactivevalues")) {
-      error_embed("shiny inputs", paste0(name, "$x"))
+    if (is_atomic(val)) {
+      val <- unname(val)
     }
-
-    if (is_sql_literal(val)) {
-      unname(val)
-    } else {
-      error_embed(obj_type_friendly(val), name)
-    }
+    val
   } else {
     cli::cli_abort(
       "Object {.var {name}} not found.",
